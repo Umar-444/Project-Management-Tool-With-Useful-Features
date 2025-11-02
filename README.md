@@ -1,6 +1,6 @@
 # 🚀 Advanced PHP To-Do List
 
-A modern, feature-rich to-do list application built with PHP, JavaScript, and CSS. This application provides a beautiful, responsive interface with advanced functionality for managing your daily tasks.
+A modern, feature-rich to-do list application built with **Object-Oriented PHP**, JavaScript, and CSS. This application provides a beautiful, responsive interface with advanced functionality for managing your daily tasks using a clean, maintainable OOP architecture.
 
 ## ✨ Features
 
@@ -45,9 +45,17 @@ A modern, feature-rich to-do list application built with PHP, JavaScript, and CS
 - **Data Persistence**: All data stored in MySQL database
 - **Backup Ready**: Easy to backup and restore data
 
+### 🏗️ OOP Architecture
+- **Object-Oriented Design**: Clean separation of concerns with Models, Services, and Controllers
+- **Singleton Database**: Efficient database connection management
+- **Centralized Validation**: Robust input validation and sanitization
+- **Service Layer**: Business logic separated from presentation
+- **Modular Structure**: Easy to extend and maintain
+
 ## 🛠️ Technology Stack
 
-- **Backend**: PHP 7.4+ with PDO
+- **Backend**: PHP 7.4+ with OOP architecture and PDO
+- **Architecture**: MVC-inspired (Models, Services, Controllers)
 - **Database**: MySQL 5.7+
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Libraries**: jQuery 3.2.1
@@ -99,6 +107,53 @@ A modern, feature-rich to-do list application built with PHP, JavaScript, and CS
 - `color` (VARCHAR(50), Default: '#3498db')
 - `icon` (VARCHAR(50), Default: '📝')
 
+#### `todos` (Updated Fields)
+- `kanban_column` (ENUM: 'todo', 'in_progress', 'review', 'done', Default: 'todo')
+- `sort_order` (INT, Default: 0)
+
+## 📁 Project Structure
+
+```
+project-root/
+├── app/
+│   ├── Core/              # Core OOP classes
+│   │   ├── Database.php   # Singleton database connection
+│   │   ├── Response.php   # Standardized JSON responses
+│   │   ├── Validator.php  # Input validation & sanitization
+│   │   └── autoload.php   # Class autoloader
+│   ├── Models/            # Data models
+│   │   ├── Todo.php       # Todo entity with business logic
+│   │   └── Category.php   # Category entity
+│   ├── Services/          # Business logic layer
+│   │   ├── TodoService.php    # Todo business operations
+│   │   └── CategoryService.php # Category business operations
+│   ├── Controllers/       # HTTP request handlers
+│   │   ├── TodoController.php    # Todo API endpoints
+│   │   └── CategoryController.php # Category API endpoints
+│   ├── add.php           # Add todo endpoint
+│   ├── get_todos.php     # Get todos endpoint
+│   ├── update.php        # Update todo endpoint
+│   ├── check.php         # Toggle completion endpoint
+│   ├── remove.php        # Delete todo endpoint
+│   ├── update_kanban.php # Kanban board updates
+│   ├── get_categories.php # Get categories endpoint
+│   └── export.php        # Export functionality
+├── css/
+│   └── style.css         # Application styles
+├── js/
+│   └── script.js         # Frontend JavaScript
+├── include/
+│   ├── header.php        # HTML header
+│   └── footer.php        # HTML footer
+├── index.php            # Landing page
+├── todo.php            # Todo management page
+├── kanban.php          # Kanban board page
+├── db_conn.php         # Legacy database connection (kept for compatibility)
+├── todo_php.sql        # Database schema
+├── sw.js              # Service worker
+└── README.md          # This file
+```
+
 ## 🎨 Customization
 
 ### Themes
@@ -123,13 +178,117 @@ Modify priority levels by updating the ENUM values in the database schema and co
 
 ## 🔧 API Endpoints
 
-- `POST /app/add.php` - Add new todo
-- `POST /app/update.php` - Update existing todo
-- `POST /app/check.php` - Toggle todo completion
-- `POST /app/remove.php` - Delete todo
-- `GET /app/get_todos.php` - Get all todos
-- `GET /app/get_categories.php` - Get all categories
-- `GET /app/export.php?format=json|csv` - Export todos
+All API endpoints now use the new OOP architecture with Controllers, Services, and Models:
+
+- `POST /app/add.php` - Add new todo (TodoController::add)
+- `POST /app/update.php` - Update existing todo (TodoController::update)
+- `POST /app/check.php` - Toggle todo completion (TodoController::toggleStatus)
+- `POST /app/remove.php` - Delete todo (TodoController::delete)
+- `GET /app/get_todos.php` - Get all todos with filtering (TodoController::getTodos)
+- `POST /app/update_kanban.php` - Update kanban position (TodoController::updateKanban)
+- `GET /app/get_categories.php` - Get all categories (CategoryController::getCategories)
+- `GET /app/export.php?format=json|csv` - Export todos (TodoController::export)
+
+### API Response Formats
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "todos": [...]
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "message": "Error description"
+}
+```
+
+## 🏗️ OOP Architecture Details
+
+### Core Classes
+
+#### Database (Singleton Pattern)
+```php
+Database::getInstance()->getConnection()
+```
+- Manages PDO connections efficiently
+- Prevents multiple database connections
+- Handles connection errors gracefully
+
+#### Response (Utility Class)
+```php
+Response::success($data, "Success message");
+Response::error("Error message", 400);
+```
+- Standardized JSON response formatting
+- Proper HTTP status codes
+- Consistent API responses
+
+#### Validator (Utility Class)
+```php
+Validator::validateTodoData($input);
+Validator::sanitizeString($string);
+```
+- Centralized input validation
+- SQL injection prevention
+- Data sanitization
+
+### Model Classes
+
+#### Todo Model
+```php
+$todo = new Todo($data);
+$todo->markComplete();
+$todo->isOverdue();
+```
+- Encapsulates todo data and business logic
+- Built-in validation and formatting
+- Rich business methods
+
+#### Category Model
+```php
+$category = new Category($data);
+$category->getDisplayName();
+```
+- Category entity management
+- Display formatting methods
+
+### Service Classes
+
+#### TodoService
+```php
+$service = new TodoService();
+$result = $service->createTodo($data);
+$todos = $service->getTodos($filters);
+```
+- Contains all todo business logic
+- Database operations abstraction
+- Data transformation and validation
+
+#### CategoryService
+```php
+$service = new CategoryService();
+$categories = $service->getCategories();
+```
+- Category business operations
+- Todo count aggregation
+
+### Controller Classes
+
+#### TodoController
+```php
+$controller = new TodoController();
+$controller->add();        // Handles POST /add
+$controller->getTodos();   // Handles GET /get_todos
+$controller->export();     // Handles GET /export
+```
+- HTTP request/response handling
+- Input parsing and validation
+- Service coordination
 
 ## 🚀 Performance Features
 
@@ -141,10 +300,37 @@ Modify priority levels by updating the ENUM values in the database schema and co
 
 ## 🔒 Security Features
 
-- **SQL Injection Protection**: All queries use prepared statements
-- **XSS Prevention**: Input sanitization and output escaping
+- **SQL Injection Protection**: All queries use prepared statements with PDO
+- **XSS Prevention**: Centralized input sanitization and validation
 - **CSRF Protection**: Form tokens and validation
-- **Input Validation**: Server-side validation for all inputs
+- **Input Validation**: Server-side validation with dedicated Validator class
+- **OOP Security**: Clean separation prevents security vulnerabilities
+- **Error Handling**: Proper exception handling and error responses
+
+## 🔄 Migration to OOP
+
+This project has been converted from procedural PHP to a modern Object-Oriented architecture:
+
+### What Changed
+- ✅ **Procedural → OOP**: All code converted to classes and objects
+- ✅ **Separation of Concerns**: Business logic separated from presentation
+- ✅ **Database Layer**: Singleton pattern for efficient connections
+- ✅ **Validation Layer**: Centralized input validation and sanitization
+- ✅ **Response Layer**: Standardized JSON response formatting
+- ✅ **Maintainability**: Easy to extend and modify
+
+### Backward Compatibility
+- ✅ **Frontend Unchanged**: JavaScript code works without modifications
+- ✅ **API Endpoints**: Same URLs and request formats maintained
+- ✅ **Database Schema**: No changes required
+- ✅ **Functionality**: All features work exactly as before
+
+### Benefits Achieved
+- 🚀 **Scalability**: Easy to add new features (users, projects, teams)
+- 🔧 **Maintainability**: Clear structure and separation of concerns
+- 🧪 **Testability**: Classes can be unit tested independently
+- 💪 **Robustness**: Better error handling and validation
+- 📈 **Performance**: Optimized database connections and queries
 
 ## 📱 Browser Support
 
@@ -175,4 +361,6 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Made with ❤️ for productivity enthusiasts**
+**Built with Modern OOP PHP Architecture** 🚀
+
+**Made with ❤️ for productivity enthusiasts and developers**
