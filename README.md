@@ -15,6 +15,8 @@ A modern, feature-rich to-do list application built with **Object-Oriented PHP**
 
 ---
 
+<img width="1500" height="657" alt="image" src="https://github.com/user-attachments/assets/31845c30-b1be-4dd3-bc26-28f765213c8d" />
+
 ## ✨ Features
 
 ### 🎨 Modern UI/UX
