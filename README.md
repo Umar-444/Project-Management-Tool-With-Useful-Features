@@ -10,6 +10,7 @@ A modern, feature-rich to-do list application built with PHP, JavaScript, and CS
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 - **Smooth Animations**: Elegant animations and transitions throughout the app
 - **Custom Scrollbars**: Styled scrollbars that match the theme
+- **Welcome Landing Page**: Professional homepage with feature overview and quick navigation
 
 ### 📝 Advanced Todo Management
 - **Rich Todo Creation**: Add title, description, category, priority, and due date
@@ -69,7 +70,8 @@ A modern, feature-rich to-do list application built with PHP, JavaScript, and CS
 3. **Web Server Setup**
    - Place the files in your web server directory
    - Ensure PHP and MySQL are properly configured
-   - Access the application through your web browser
+   - Access the application at `http://your-domain/` (opens the landing page)
+   - Or directly access `http://your-domain/todo.php` or `http://your-domain/kanban.php`
 
 4. **Optional: SSL Certificate**
    - For service worker functionality, HTTPS is recommended
@@ -113,7 +115,7 @@ The app supports both light and dark themes. You can customize colors by modifyi
 ### Categories
 Add new categories by:
 1. Inserting into the `categories` table
-2. Adding options to the category select in `index.php`
+2. Adding options to the category select in `todo.php`
 3. Updating the JavaScript category handling
 
 ### Priorities

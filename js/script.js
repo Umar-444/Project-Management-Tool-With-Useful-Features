@@ -3,7 +3,9 @@ class TodoApp {
     constructor() {
         this.todos = [];
         this.filteredTodos = [];
-        this.currentFilter = 'all';
+        this.currentCategoryFilter = 'all';
+        this.currentPriorityFilter = 'all';
+        this.currentStatusFilter = 'all';
         this.currentSort = 'newest';
         this.searchTerm = '';
         this.isDarkTheme = false;
@@ -31,22 +33,24 @@ class TodoApp {
         document.getElementById('searchInput')?.addEventListener('input', (e) => this.handleSearch(e));
         
         // Filter functionality
-        document.getElementById('categoryFilter')?.addEventListener('change', (e) => this.handleFilter(e));
-        document.getElementById('priorityFilter')?.addEventListener('change', (e) => this.handleFilter(e));
-        document.getElementById('statusFilter')?.addEventListener('change', (e) => this.handleFilter(e));
+        document.getElementById('categoryFilter')?.addEventListener('change', (e) => this.handleCategoryFilter(e));
+        document.getElementById('priorityFilter')?.addEventListener('change', (e) => this.handlePriorityFilter(e));
+        document.getElementById('statusFilter')?.addEventListener('change', (e) => this.handleStatusFilter(e));
         
         // Sort functionality
         document.getElementById('sortBtn')?.addEventListener('click', (e) => this.handleSort(e));
         
-        // Navigation
-        document.getElementById('todoFormNav')?.addEventListener('click', (e) => this.switchSection('todoForm'));
-        document.getElementById('kanbanNav')?.addEventListener('click', (e) => this.switchSection('kanban'));
+        // Set active navigation based on current page
+        this.setActiveNavigation();
         
         // Export functionality
         document.getElementById('exportBtn')?.addEventListener('click', (e) => this.exportTodos());
         
         // Theme toggle
         document.getElementById('themeToggle')?.addEventListener('click', (e) => this.toggleTheme());
+
+        // Mobile menu
+        this.initMobileMenu();
         
         // Checkbox changes
         document.addEventListener('change', (e) => {
@@ -106,9 +110,9 @@ class TodoApp {
                 this.showNotification('Todo added successfully!', 'success');
                 e.target.reset();
                 
-                // Switch to Kanban view to show the new todo
+                // Redirect to Kanban view to show the new todo
                 setTimeout(() => {
-                    this.switchSection('kanban');
+                    window.location.href = 'kanban.php';
                 }, 1000);
             } else {
                 throw new Error('Failed to add todo');
@@ -121,34 +125,47 @@ class TodoApp {
 
     async loadTodos() {
         try {
-            const response = await fetch('app/get_todos.php');
+            const response = await fetch('app/get_todos.php', {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.todos = data.todos;
                 this.applyFilters();
                 this.updateStatistics();
                 this.renderTodos();
+            } else {
+                throw new Error(data.message || 'Failed to load todos');
             }
         } catch (error) {
             console.error('Error loading todos:', error);
-            this.showNotification('Error loading todos', 'error');
+            this.showNotification(`❌ ${error.message || 'Error loading todos'}`, 'error');
         }
     }
 
     applyFilters() {
         this.filteredTodos = this.todos.filter(todo => {
-            const matchesSearch = !this.searchTerm || 
+            const matchesSearch = !this.searchTerm ||
                 todo.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
                 todo.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-            
-            const matchesCategory = this.currentFilter === 'all' || todo.category === this.currentFilter;
-            const matchesPriority = this.currentFilter === 'all' || todo.priority === this.currentFilter;
-            const matchesStatus = this.currentFilter === 'all' || 
-                (this.currentFilter === 'completed' && todo.checked) ||
-                (this.currentFilter === 'pending' && !todo.checked);
-            
-            return matchesSearch && (matchesCategory || matchesPriority || matchesStatus);
+
+            const matchesCategory = this.currentCategoryFilter === 'all' || todo.category === this.currentCategoryFilter;
+            const matchesPriority = this.currentPriorityFilter === 'all' || todo.priority === this.currentPriorityFilter;
+            const matchesStatus = this.currentStatusFilter === 'all' ||
+                (this.currentStatusFilter === 'completed' && todo.checked) ||
+                (this.currentStatusFilter === 'pending' && !todo.checked);
+
+            return matchesSearch && matchesCategory && matchesPriority && matchesStatus;
         });
 
         this.sortTodos();
@@ -224,7 +241,7 @@ class TodoApp {
                         <h3 class="todo-title">${this.escapeHtml(todo.title)}</h3>
                         ${todo.description ? `<p class="todo-description">${this.escapeHtml(todo.description)}</p>` : ''}
                         <div class="todo-meta">
-                            <span class="todo-category" style="background-color: ${todo.color || '#3498db'}">
+                            <span class="todo-category" style="background-color: ${todo.color || '#185cff'}">
                                 ${this.getCategoryIcon(todo.category)} ${todo.category}
                             </span>
                             <span class="todo-priority priority-${todo.priority.toLowerCase()}">
@@ -276,7 +293,7 @@ class TodoApp {
                 </div>
                 ${todo.description ? `<p class="kanban-todo-description">${this.escapeHtml(todo.description)}</p>` : ''}
                 <div class="kanban-todo-meta">
-                    <span class="kanban-todo-category" style="background-color: ${todo.color || '#3498db'}">
+                    <span class="kanban-todo-category" style="background-color: ${todo.color || '#185cff'}">
                         ${this.getCategoryIcon(todo.category)} ${todo.category}
                     </span>
                     <span class="kanban-todo-priority priority-${todo.priority.toLowerCase()}">
@@ -466,8 +483,20 @@ class TodoApp {
         this.renderTodos();
     }
 
-    handleFilter(e) {
-        this.currentFilter = e.target.value;
+    handleCategoryFilter(e) {
+        this.currentCategoryFilter = e.target.value;
+        this.applyFilters();
+        this.renderTodos();
+    }
+
+    handlePriorityFilter(e) {
+        this.currentPriorityFilter = e.target.value;
+        this.applyFilters();
+        this.renderTodos();
+    }
+
+    handleStatusFilter(e) {
+        this.currentStatusFilter = e.target.value;
         this.applyFilters();
         this.renderTodos();
     }
@@ -486,10 +515,18 @@ class TodoApp {
         this.isDarkTheme = !this.isDarkTheme;
         document.documentElement.setAttribute('data-theme', this.isDarkTheme ? 'dark' : 'light');
         localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
-        
+
         const icon = document.querySelector('#themeToggle i');
-        icon.textContent = this.isDarkTheme ? '☀️' : '🌙';
-        
+        const themeText = document.querySelector('#themeToggle .theme-text');
+
+        if (this.isDarkTheme) {
+            icon.className = 'fas fa-sun';
+            if (themeText) themeText.textContent = 'Light';
+        } else {
+            icon.className = 'fas fa-moon';
+            if (themeText) themeText.textContent = 'Dark';
+        }
+
         this.showNotification(`Switched to ${this.isDarkTheme ? 'dark' : 'light'} theme`, 'success');
     }
 
@@ -501,8 +538,16 @@ class TodoApp {
         }
         
         const icon = document.querySelector('#themeToggle i');
+        const themeText = document.querySelector('#themeToggle .theme-text');
+
         if (icon) {
-            icon.textContent = this.isDarkTheme ? '☀️' : '🌙';
+            if (this.isDarkTheme) {
+                icon.className = 'fas fa-sun';
+                if (themeText) themeText.textContent = 'Light';
+            } else {
+                icon.className = 'fas fa-moon';
+                if (themeText) themeText.textContent = 'Dark';
+            }
         }
     }
 
@@ -510,18 +555,27 @@ class TodoApp {
         const total = this.todos.length;
         const completed = this.todos.filter(t => t.checked).length;
         const pending = total - completed;
-        const overdue = this.todos.filter(t => 
+        const overdue = this.todos.filter(t =>
             t.due_date && new Date(t.due_date) < new Date() && !t.checked
         ).length;
 
-        document.getElementById('totalTodos').textContent = total;
-        document.getElementById('completedTodos').textContent = completed;
-        document.getElementById('pendingTodos').textContent = pending;
-        document.getElementById('overdueTodos').textContent = overdue;
+        // Only update statistics if elements exist (they're only on kanban.php)
+        const totalEl = document.getElementById('totalTodos');
+        const completedEl = document.getElementById('completedTodos');
+        const pendingEl = document.getElementById('pendingTodos');
+        const overdueEl = document.getElementById('overdueTodos');
 
-        // Update progress bar
-        const progress = total > 0 ? (completed / total) * 100 : 0;
-        document.querySelector('.progress-fill').style.width = `${progress}%`;
+        if (totalEl) totalEl.textContent = total;
+        if (completedEl) completedEl.textContent = completed;
+        if (pendingEl) pendingEl.textContent = pending;
+        if (overdueEl) overdueEl.textContent = overdue;
+
+        // Update progress bar only if it exists
+        const progressFill = document.querySelector('.progress-fill');
+        if (progressFill) {
+            const progress = total > 0 ? (completed / total) * 100 : 0;
+            progressFill.style.width = `${progress}%`;
+        }
     }
 
     setupDragAndDrop() {
@@ -629,6 +683,63 @@ class TodoApp {
         }
         
         this.showNotification(`Switched to ${section === 'todoForm' ? 'Add Todo' : 'Kanban Board'}`, 'success');
+    }
+
+    setActiveNavigation() {
+        // Set active navigation based on current page
+        const currentPage = window.location.pathname.split('/').pop();
+
+        // Clear all active states
+        document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => link.classList.remove('active'));
+
+        if (currentPage === 'index.php' || currentPage === '') {
+            document.getElementById('homeNav')?.classList.add('active');
+            document.getElementById('mobileHomeNav')?.classList.add('active');
+        } else if (currentPage === 'todo.php') {
+            document.getElementById('todoFormNav')?.classList.add('active');
+            document.getElementById('mobileTodoFormNav')?.classList.add('active');
+        } else if (currentPage === 'kanban.php') {
+            document.getElementById('kanbanNav')?.classList.add('active');
+            document.getElementById('mobileKanbanNav')?.classList.add('active');
+        }
+    }
+
+    initMobileMenu() {
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuLinks = document.querySelectorAll('.mobile-nav-link');
+
+        if (mobileMenuToggle && mobileMenuOverlay) {
+            // Toggle mobile menu
+            mobileMenuToggle.addEventListener('click', () => {
+                mobileMenuOverlay.classList.toggle('active');
+                mobileMenuToggle.classList.toggle('active');
+            });
+
+            // Close mobile menu when clicking on a link
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenuOverlay.classList.remove('active');
+                    mobileMenuToggle.classList.remove('active');
+                });
+            });
+
+            // Close mobile menu when clicking outside
+            mobileMenuOverlay.addEventListener('click', (e) => {
+                if (e.target === mobileMenuOverlay) {
+                    mobileMenuOverlay.classList.remove('active');
+                    mobileMenuToggle.classList.remove('active');
+                }
+            });
+
+            // Close mobile menu on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && mobileMenuOverlay.classList.contains('active')) {
+                    mobileMenuOverlay.classList.remove('active');
+                    mobileMenuToggle.classList.remove('active');
+                }
+            });
+        }
     }
 
     setDragOverState(column) {
@@ -899,6 +1010,23 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
+
+                // Force update check
+                registration.update();
+
+                // Listen for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available, show notification
+                                console.log('New version available, refreshing...');
+                                window.location.reload();
+                            }
+                        });
+                    }
+                });
             })
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);

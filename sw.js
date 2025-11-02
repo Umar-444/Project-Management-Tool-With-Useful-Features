@@ -1,8 +1,10 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'todo-app-v1';
+const CACHE_NAME = 'todo-app-v3';
 const urlsToCache = [
     '/',
     '/index.php',
+    '/todo.php',
+    '/kanban.php',
     '/css/style.css',
     '/js/script.js',
     '/js/jquery-3.2.1.min.js',
@@ -12,6 +14,8 @@ const urlsToCache = [
 
 // Install event
 self.addEventListener('install', event => {
+    console.log('Service worker installing');
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
@@ -35,6 +39,7 @@ self.addEventListener('fetch', event => {
 
 // Activate event
 self.addEventListener('activate', event => {
+    console.log('Service worker activating');
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
@@ -45,6 +50,9 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
+        }).then(() => {
+            console.log('Service worker activated and old caches cleared');
+            return self.clients.claim();
         })
     );
 });
