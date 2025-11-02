@@ -13,7 +13,8 @@ class TodoApp {
         this.currentView = 'list'; // 'list' or 'kanban'
         this.draggedTodo = null;
         this.dragOverColumn = null;
-        
+        this.selectedTodos = new Set(); // Store selected todo IDs
+
         this.init();
     }
 
@@ -48,6 +49,20 @@ class TodoApp {
         
         // Theme toggle
         document.getElementById('themeToggle')?.addEventListener('click', (e) => this.toggleTheme());
+
+        // Bulk selection events
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('todo-bulk-select')) {
+                this.handleBulkSelection(e.target);
+            }
+        });
+
+        // Bulk action events
+        document.getElementById('selectAllBtn')?.addEventListener('click', () => this.selectAllTodos());
+        document.getElementById('clearSelectionBtn')?.addEventListener('click', () => this.clearSelection());
+        document.getElementById('bulkCompleteBtn')?.addEventListener('click', () => this.bulkCompleteTodos());
+        document.getElementById('bulkPrioritySelect')?.addEventListener('change', (e) => this.bulkChangePriority(e.target.value));
+        document.getElementById('bulkDeleteBtn')?.addEventListener('click', () => this.bulkDeleteTodos());
 
         // Mobile menu
         this.initMobileMenu();
@@ -230,13 +245,16 @@ class TodoApp {
     getTodoHTML(todo) {
         const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && !todo.checked;
         const dueDateFormatted = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : '';
-        
+
         return `
-            <div class="todo-item ${todo.checked ? 'checked' : ''} priority-${todo.priority.toLowerCase()}" 
+            <div class="todo-item ${todo.checked ? 'checked' : ''} priority-${todo.priority.toLowerCase()}"
                  data-id="${todo.id}" draggable="true">
                 <div class="todo-header">
-                    <div class="todo-checkbox ${todo.checked ? 'checked' : ''}" 
+                    <div class="todo-checkbox ${todo.checked ? 'checked' : ''}"
                          data-todo-id="${todo.id}"></div>
+                    <div class="bulk-checkbox">
+                        <input type="checkbox" class="todo-bulk-select" data-todo-id="${todo.id}">
+                    </div>
                     <div class="todo-content">
                         <h3 class="todo-title">${this.escapeHtml(todo.title)}</h3>
                         ${todo.description ? `<p class="todo-description">${this.escapeHtml(todo.description)}</p>` : ''}
@@ -274,12 +292,15 @@ class TodoApp {
     getKanbanTodoHTML(todo) {
         const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && !todo.checked;
         const dueDateFormatted = todo.due_date ? new Date(todo.due_date).toLocaleDateString() : '';
-        
+
         return `
-            <div class="kanban-todo-item priority-${todo.priority.toLowerCase()}" 
-                 data-id="${todo.id}" 
+            <div class="kanban-todo-item priority-${todo.priority.toLowerCase()}"
+                 data-id="${todo.id}"
                  data-column="${todo.kanban_column}"
                  draggable="true">
+                <div class="kanban-bulk-checkbox">
+                    <input type="checkbox" class="todo-bulk-select" data-todo-id="${todo.id}">
+                </div>
                 <div class="kanban-todo-header">
                     <h4 class="kanban-todo-title">${this.escapeHtml(todo.title)}</h4>
                     <div class="kanban-todo-actions">
@@ -996,6 +1017,164 @@ class TodoApp {
     autoSave() {
         // Implementation for auto-save functionality
         console.log('Auto-saving...');
+    }
+
+    // Bulk Actions Methods
+    handleBulkSelection(checkbox) {
+        const todoId = parseInt(checkbox.dataset.todoId);
+
+        if (checkbox.checked) {
+            this.selectedTodos.add(todoId);
+        } else {
+            this.selectedTodos.delete(todoId);
+        }
+
+        this.updateBulkSelectionUI();
+        this.updateTodoSelectionVisual(checkbox, checkbox.checked);
+    }
+
+    updateBulkSelectionUI() {
+        const toolbar = document.getElementById('bulkActionsToolbar');
+        const selectedCount = document.getElementById('selectedCount');
+
+        if (this.selectedTodos.size > 0) {
+            toolbar.style.display = 'block';
+            selectedCount.textContent = this.selectedTodos.size;
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    updateTodoSelectionVisual(checkbox, isSelected) {
+        const todoElement = checkbox.closest('.todo-item') || checkbox.closest('.kanban-todo-item');
+        if (todoElement) {
+            if (isSelected) {
+                todoElement.classList.add('selected');
+            } else {
+                todoElement.classList.remove('selected');
+            }
+        }
+    }
+
+    selectAllTodos() {
+        const visibleTodos = this.filteredTodos;
+        const checkboxes = document.querySelectorAll('.todo-bulk-select');
+
+        checkboxes.forEach(checkbox => {
+            const todoId = parseInt(checkbox.dataset.todoId);
+            const todo = visibleTodos.find(t => t.id === todoId);
+
+            if (todo) {
+                checkbox.checked = true;
+                this.selectedTodos.add(todoId);
+                this.updateTodoSelectionVisual(checkbox, true);
+            }
+        });
+
+        this.updateBulkSelectionUI();
+        this.showNotification(`${this.selectedTodos.size} todos selected`, 'info');
+    }
+
+    clearSelection() {
+        this.selectedTodos.clear();
+
+        // Uncheck all checkboxes
+        document.querySelectorAll('.todo-bulk-select').forEach(checkbox => {
+            checkbox.checked = false;
+            this.updateTodoSelectionVisual(checkbox, false);
+        });
+
+        this.updateBulkSelectionUI();
+    }
+
+    async bulkCompleteTodos() {
+        if (this.selectedTodos.size === 0) return;
+
+        const confirmMessage = `Mark ${this.selectedTodos.size} todo(s) as completed?`;
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            const response = await fetch('app/bulk_complete.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ todo_ids: Array.from(this.selectedTodos) })
+            });
+
+            if (response.ok) {
+                this.showNotification(`${this.selectedTodos.size} todos marked as completed! 🎉`, 'success');
+                this.clearSelection();
+                this.loadTodos();
+            } else {
+                throw new Error('Failed to complete todos');
+            }
+        } catch (error) {
+            console.error('Error bulk completing todos:', error);
+            this.showNotification('Error completing todos', 'error');
+        }
+    }
+
+    async bulkChangePriority(newPriority) {
+        if (this.selectedTodos.size === 0 || !newPriority) return;
+
+        const confirmMessage = `Change priority to ${newPriority} for ${this.selectedTodos.size} todo(s)?`;
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            const response = await fetch('app/bulk_priority.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    todo_ids: Array.from(this.selectedTodos),
+                    priority: newPriority
+                })
+            });
+
+            if (response.ok) {
+                this.showNotification(`Priority changed for ${this.selectedTodos.size} todos`, 'success');
+                this.clearSelection();
+                this.loadTodos();
+
+                // Reset the select
+                document.getElementById('bulkPrioritySelect').value = '';
+            } else {
+                throw new Error('Failed to change priority');
+            }
+        } catch (error) {
+            console.error('Error bulk changing priority:', error);
+            this.showNotification('Error changing priority', 'error');
+        }
+    }
+
+    async bulkDeleteTodos() {
+        if (this.selectedTodos.size === 0) return;
+
+        const confirmMessage = `Are you sure you want to delete ${this.selectedTodos.size} todo(s)? This action cannot be undone.`;
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            const response = await fetch('app/bulk_delete.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ todo_ids: Array.from(this.selectedTodos) })
+            });
+
+            if (response.ok) {
+                this.showNotification(`${this.selectedTodos.size} todos deleted`, 'success');
+                this.clearSelection();
+                this.loadTodos();
+            } else {
+                throw new Error('Failed to delete todos');
+            }
+        } catch (error) {
+            console.error('Error bulk deleting todos:', error);
+            this.showNotification('Error deleting todos', 'error');
+        }
     }
 }
 

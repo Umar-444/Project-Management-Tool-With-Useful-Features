@@ -122,6 +122,38 @@
                 </button>
             </div>
 
+            <!-- Bulk Actions Toolbar -->
+            <div class="bulk-actions-toolbar" id="bulkActionsToolbar" style="display: none;">
+                <div class="bulk-actions-header">
+                    <span id="selectedCount">0</span> todos selected
+                    <button id="selectAllBtn" class="bulk-action-btn select-all">
+                        <i class="fas fa-check-square"></i>
+                        Select All
+                    </button>
+                    <button id="clearSelectionBtn" class="bulk-action-btn clear-selection">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
+                </div>
+                <div class="bulk-actions-buttons">
+                    <button id="bulkCompleteBtn" class="bulk-action-btn complete">
+                        <i class="fas fa-check"></i>
+                        Mark Complete
+                    </button>
+                    <select id="bulkPrioritySelect" class="bulk-action-select">
+                        <option value="">Change Priority</option>
+                        <option value="Low">🟢 Low</option>
+                        <option value="Medium">🟡 Medium</option>
+                        <option value="High">🟠 High</option>
+                        <option value="Urgent">🔴 Urgent</option>
+                    </select>
+                    <button id="bulkDeleteBtn" class="bulk-action-btn delete">
+                        <i class="fas fa-trash"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+
             <!-- Kanban Board Container -->
             <div class="kanban-board">
                 <div class="kanban-column" data-column="todo">

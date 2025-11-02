@@ -224,6 +224,114 @@ class TodoController
     }
 
     /**
+     * Handle bulk complete request
+     */
+    public function bulkComplete()
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            exit();
+        }
+
+        $input = $this->getJsonInput();
+        $todoIds = $input['todo_ids'] ?? [];
+
+        if (empty($todoIds) || !is_array($todoIds)) {
+            echo json_encode(['success' => false, 'message' => 'Valid todo IDs array required']);
+            exit();
+        }
+
+        $result = $this->todoService->bulkCompleteTodos($todoIds);
+
+        if ($result['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => $result['message'],
+                'count' => $result['count']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message']
+            ]);
+        }
+        exit();
+    }
+
+    /**
+     * Handle bulk priority change request
+     */
+    public function bulkPriority()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            Response::methodNotAllowed();
+        }
+
+        $input = $this->getJsonInput();
+        $todoIds = $input['todo_ids'] ?? [];
+        $priority = $input['priority'] ?? '';
+
+        if (empty($todoIds) || !is_array($todoIds)) {
+            Response::error('Valid todo IDs array required');
+        }
+
+        if (empty($priority)) {
+            Response::error('Priority is required');
+        }
+
+        $result = $this->todoService->bulkChangePriority($todoIds, $priority);
+
+        if ($result['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => $result['message'],
+                'count' => $result['count']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message']
+            ]);
+        }
+        exit();
+    }
+
+    /**
+     * Handle bulk delete request
+     */
+    public function bulkDelete()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            Response::methodNotAllowed();
+        }
+
+        $input = $this->getJsonInput();
+        $todoIds = $input['todo_ids'] ?? [];
+
+        if (empty($todoIds) || !is_array($todoIds)) {
+            Response::error('Valid todo IDs array required');
+        }
+
+        $result = $this->todoService->bulkDeleteTodos($todoIds);
+
+        if ($result['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => $result['message'],
+                'count' => $result['count']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message']
+            ]);
+        }
+        exit();
+    }
+
+    /**
      * Get JSON input from request
      */
     private function getJsonInput()

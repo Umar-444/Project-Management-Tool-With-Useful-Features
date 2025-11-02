@@ -369,4 +369,108 @@ class TodoService
 
         return ['success' => true, 'data' => $csvData, 'format' => 'csv'];
     }
+
+    /**
+     * Bulk complete todos
+     */
+    public function bulkCompleteTodos($todoIds)
+    {
+        if (empty($todoIds)) {
+            return ['success' => false, 'message' => 'No todos specified'];
+        }
+
+        try {
+            // Validate all IDs exist
+            $placeholders = str_repeat('?,', count($todoIds) - 1) . '?';
+            $stmt = $this->db->prepare("SELECT id FROM todos WHERE id IN ($placeholders)");
+            $stmt->execute($todoIds);
+            $existingIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (count($existingIds) !== count($todoIds)) {
+                return ['success' => false, 'message' => 'Some todos not found'];
+            }
+
+            // Bulk update to completed
+            $stmt = $this->db->prepare("UPDATE todos SET checked = 1, completed_at = NOW() WHERE id IN ($placeholders)");
+            $result = $stmt->execute($todoIds);
+
+            return $result
+                ? ['success' => true, 'message' => count($todoIds) . ' todos marked as completed', 'count' => count($todoIds)]
+                : ['success' => false, 'message' => 'Failed to complete todos'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Bulk change priority
+     */
+    public function bulkChangePriority($todoIds, $priority)
+    {
+        if (empty($todoIds)) {
+            return ['success' => false, 'message' => 'No todos specified'];
+        }
+
+        if (!in_array($priority, Todo::VALID_PRIORITIES)) {
+            return ['success' => false, 'message' => 'Invalid priority'];
+        }
+
+        try {
+            // Validate all IDs exist
+            $placeholders = str_repeat('?,', count($todoIds) - 1) . '?';
+            $stmt = $this->db->prepare("SELECT id FROM todos WHERE id IN ($placeholders)");
+            $stmt->execute($todoIds);
+            $existingIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (count($existingIds) !== count($todoIds)) {
+                return ['success' => false, 'message' => 'Some todos not found'];
+            }
+
+            // Bulk update priority
+            $stmt = $this->db->prepare("UPDATE todos SET priority = ? WHERE id IN ($placeholders)");
+            $params = array_merge([$priority], $todoIds);
+            $result = $stmt->execute($params);
+
+            return $result
+                ? ['success' => true, 'message' => 'Priority updated for ' . count($todoIds) . ' todos', 'count' => count($todoIds)]
+                : ['success' => false, 'message' => 'Failed to update priority'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Bulk delete todos
+     */
+    public function bulkDeleteTodos($todoIds)
+    {
+        if (empty($todoIds)) {
+            return ['success' => false, 'message' => 'No todos specified'];
+        }
+
+        try {
+            // Validate all IDs exist
+            $placeholders = str_repeat('?,', count($todoIds) - 1) . '?';
+            $stmt = $this->db->prepare("SELECT id FROM todos WHERE id IN ($placeholders)");
+            $stmt->execute($todoIds);
+            $existingIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (count($existingIds) !== count($todoIds)) {
+                return ['success' => false, 'message' => 'Some todos not found'];
+            }
+
+            // Bulk delete
+            $stmt = $this->db->prepare("DELETE FROM todos WHERE id IN ($placeholders)");
+            $result = $stmt->execute($todoIds);
+
+            return $result
+                ? ['success' => true, 'message' => count($todoIds) . ' todos deleted', 'count' => count($todoIds)]
+                : ['success' => false, 'message' => 'Failed to delete todos'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
 }

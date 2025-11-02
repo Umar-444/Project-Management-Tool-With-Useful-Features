@@ -1,6 +1,19 @@
+> **This Project is created by Umar FarooQ, a Project Manager at WorldWebTree. It is open for contribution – let's make it big with new best features! Please email me if you want me to collab with you in other projects: Umarpak995@gmail.com**
+
 # 🚀 Advanced PHP To-Do List
 
 A modern, feature-rich to-do list application built with **Object-Oriented PHP**, JavaScript, and CSS. This application provides a beautiful, responsive interface with advanced functionality for managing your daily tasks using a clean, maintainable OOP architecture.
+
+---
+
+**👤 Author & Collaboration**
+- **Umar FarooQ** | Project Manager at WorldWebTree  
+- Open to collaborations! Email: [Umarpak995@gmail.com](mailto:Umarpak995@gmail.com)
+- LinkedIn: [linkedin/in/umar444](https://linkedin.com/in/umar444)
+- GitHub: [github/umar-444](https://github.com/umar-444)
+- #umar44
+
+---
 
 ## ✨ Features
 
@@ -364,3 +377,13 @@ This project is open source and available under the [MIT License](LICENSE).
 **Built with Modern OOP PHP Architecture** 🚀
 
 **Made with ❤️ for productivity enthusiasts and developers**
+
+---
+
+> **This Project is created by Umar FarooQ, a Project Manager at WorldWebTree, and a Senior Software engineer in Riyadh, Saudi Arabia.  
+Use this email to contact: Umarpak995@gmail.com  
+LinkedIn: linkedin/in/umar444  
+GitHub: github/umar-444  
+#umar44**
+
+---

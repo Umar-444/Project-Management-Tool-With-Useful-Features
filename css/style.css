@@ -1941,3 +1941,111 @@ html {
       [data-theme="dark"] .theme-toggle .theme-text {
           color: #294bd0 !important;
       }
+
+/* Bulk Actions Styles */
+.bulk-actions-toolbar {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+.bulk-actions-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bulk-actions-header span {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.bulk-actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.bulk-action-btn, .bulk-action-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--light-color);
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bulk-action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.bulk-action-btn.complete:hover {
+    background: var(--success-color);
+}
+
+.bulk-action-btn.delete:hover {
+    background: var(--danger-color);
+}
+
+.bulk-action-select {
+    min-width: 140px;
+}
+
+.bulk-action-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Bulk Selection Checkboxes */
+.bulk-checkbox {
+    margin-right: 0.5rem;
+}
+
+.bulk-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
+.kanban-bulk-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+.kanban-bulk-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary-color);
+}
+
+.kanban-todo-item {
+    position: relative;
+    padding-top: 30px;
+}
+
+/* Selected todo highlighting */
+.todo-item.selected,
+.kanban-todo-item.selected {
+    box-shadow: 0 0 0 2px var(--primary-color);
+    transform: scale(1.02);
+}
+
+.todo-bulk-select:checked {
+    background: var(--primary-color);
+}
